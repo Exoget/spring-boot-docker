@@ -1,59 +1,99 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<groupId>guru.springframework</groupId>
-	<artifactId>spring-boot-docker</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<packaging>jar</packaging>
+    <groupId>guru.springframework</groupId>
+    <artifactId>spring-boot-docker</artifactId>
+    <version>4.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
-	<name>spring-boot-docker</name>
-	<description>Spring Framework Guru Docker Course</description>
+    <name>spring-boot-docker</name>
+    <description>Spring Framework Guru Docker Course</description>
 
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.1.RELEASE</version>
-		<relativePath/> <!-- lookup parent from repository -->
-	</parent>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>1.5.1.RELEASE</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>1.8</java.version>
-	</properties>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.8</java.version>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-thymeleaf</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
+        <!--set this to your docker acct name-->
+        <docker.image.prefix>exoget</docker.image.prefix>
 
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-		</dependency>
+        <!--Set to name of project-->
+        <docker.image.name>springbootdocker</docker.image.name>
 
-		<!--testing deps-->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
-	
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
-	
+    </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+        </dependency>
+
+        <!--testing deps-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.33.0</version>
+
+                <configuration>
+                    <!--pour le cas d OSX-->
+                    <!--<dockerHost>unix:///var/run/docker.sock</dockerHost>-->
+                    <!--<dockerHost>tcp://localhost:2375</dockerHost>-->
+                    <dockerHost>npipe:////./pipe/docker_engine</dockerHost>
+                    <verbose>true</verbose>
+                    <images>
+                        <image>
+                            <name>${docker.image.prefix}/${docker.image.name}</name>
+                            <build>
+                                <dockerFileDir>${project.basedir}/src/main/docker/</dockerFileDir>
+
+                                <!--copies artficact to docker build dir in target-->
+                                <assembly>
+                                    <descriptorRef>artifact</descriptorRef>
+                                </assembly>
+                                <tags>
+                                    <tag>latest</tag>
+                                    <tag>${project.version}</tag>
+                                </tags>
+                            </build>
+                            <run>
+                                <ports>
+                                    <port>8082:8080</port>
+                                </ports>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
