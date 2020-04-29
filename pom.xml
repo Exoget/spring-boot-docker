@@ -5,7 +5,7 @@
 
     <groupId>guru.springframework</groupId>
     <artifactId>spring-boot-docker</artifactId>
-    <version>4.0.1-SNAPSHOT</version>
+    <version>5.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>spring-boot-docker</name>
@@ -27,6 +27,9 @@
 
         <!--Set to name of project-->
         <docker.image.name>springbootdocker</docker.image.name>
+        <!--TODO-->
+        <!--il faut comprender pourquoi elle pose probleme au momement de demarage des images-->
+        <!--<docker.startParallel>true</docker.startParallel>-->
 
     </properties>
 
@@ -37,11 +40,30 @@
             <artifactId>page-view-client</artifactId>
             <version>0.0.3-SNAPSHOT</version>
         </dependency>
+
+        <!--Faut ajouter les trois dependances JAXB parceque l'image docker s'execute avec la derniere version de java
+        FROM openjdk dans le fichier dockerFile ( a partir de java 9 elles sont plus disponibles dans le jdk)
+        https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48279048#48279048
+        https://stackoverflow.com/questions/51916221/javax-xml-bind-jaxbexception-implementation-of-jaxb-api-has-not-been-found-on-mo
+        -->
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
             <version>2.3.1</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/javax.activation/activation -->
+        <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>activation</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-runtime -->
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
@@ -100,6 +122,87 @@
                                 <ports>
                                     <port>8080:8080</port>
                                 </ports>
+                                <links>
+                                    <link>myrabbitmq:rabbitmq</link>
+                                </links>
+                                <env>
+                                    <SPRING_RABBITMQ_HOST>rabbitmq</SPRING_RABBITMQ_HOST>
+                                </env>
+                                <dependsOn>
+                                    <container>myrabbitmq</container>
+                                    <container>pageviewservice</container>
+                                </dependsOn>
+                            </run>
+                        </image>
+                        <!--mysql container-->
+                        <image>
+                            <name>mysql</name>
+                            <alias>mysqldb</alias>
+                            <run>
+                                <!--expose port for dn-->
+                                <ports>
+                                    <port>3306:3306</port>
+                                </ports>
+                                <!--set env prams for mysql image-->
+                                <env>
+                                    <MYSQL_DATABASE>rabbitDB</MYSQL_DATABASE>
+                                    <MYSQL_ALLOW_EMPTY_PASSWORD>yes</MYSQL_ALLOW_EMPTY_PASSWORD>
+                                </env>
+                                <!--wait for db to start-->
+                                <wait>
+                                    <time>30000</time>
+                                </wait>
+                            </run>
+                        </image>
+                        <!--rabbit container-->
+                        <image>
+                            <name>rabbitmq:3-management</name>
+                            <alias>myrabbitmq</alias>
+                            <run>
+                                <ports>
+                                    <port>5671</port>
+                                    <port>5672</port>
+                                    <port>4369</port>
+                                    <port>25672</port>
+                                </ports>
+                                <!--wait for db to start-->
+                                <wait>
+                                    <time>30000</time>
+                                </wait>
+                            </run>
+                        </image>
+                        <!--docker run &#45;&#45;name pageviewservice -p 8081:8081 &#45;&#45;link rabbitmq:rabbitmq &#45;&#45;link mysqldb:mysqldb-->
+                        <!-- -e SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/pageviewservice -e SPRING_PROFILES_ACTIVE=mysql-->
+                        <!-- -e SPRING_RABBITMQ_HOST=rabbitmq springframeworkguru/pageviewservice-->
+                        <!--page container-->
+                        <image>
+                            <name>exoget/pageviewservice</name>
+                            <alias>pageviewservice</alias>
+                            <run>
+                                <ports>
+                                    <port>8081:8081</port>
+                                </ports>
+                                <links>
+                                    <link>myrabbitmq:rabbitmq</link>
+                                    <link>mysqldb:mysqldb</link>
+                                </links>
+                                <env>
+                                    <SPRING_DATASOURCE_URL>jdbc:mysql://mysqldb:3306/rabbitDB</SPRING_DATASOURCE_URL>
+                                    <SPRING_PROFILES_ACTIVE>mysql</SPRING_PROFILES_ACTIVE>
+                                    <SPRING_RABBITMQ_HOST>rabbitmq</SPRING_RABBITMQ_HOST>
+                                </env>
+                                <dependsOn>
+                                    <container>myrabbitmq</container>
+                                    <container>mysqldb</container>
+                                </dependsOn>
+                                <!--<wait>-->
+                                <!--<http>-->
+                                <!--<url>http://localhost:8081/health</url>-->
+                                <!--<method>GET</method>-->
+                                <!--<status>200..399</status>-->
+                                <!--</http>-->
+                                <!--<time>75000</time>-->
+                                <!--</wait>-->
                             </run>
                         </image>
                     </images>
