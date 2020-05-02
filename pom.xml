@@ -183,6 +183,7 @@
                                     <port>8081:8081</port>
                                 </ports>
                                 <links>
+                                    <!-- link <container name>:<host name>-->
                                     <link>myrabbitmq:rabbitmq</link>
                                     <link>mysqldb:mysqldb</link>
                                 </links>
